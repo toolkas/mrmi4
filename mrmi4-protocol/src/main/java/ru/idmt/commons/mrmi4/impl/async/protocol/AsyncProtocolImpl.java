@@ -16,9 +16,24 @@ public class AsyncProtocolImpl implements Protocol {
 	private final DataInputStream input;
 	private final Random random = new Random();
 
-	private final Object readLock = new Object();
-	private final Object writeLock = new Object();
-	private final Object callIdLock = new Object();
+	private final Object readLock = new Object(){
+		@Override
+		public String toString() {
+			return "ReadLock()";
+		}
+	};
+	private final Object writeLock = new Object(){
+		@Override
+		public String toString() {
+			return "WriteLock()";
+		}
+	};
+	private final Object callIdLock = new Object(){
+		@Override
+		public String toString() {
+			return "CreateCallIdLock()";
+		}
+	};
 
 	private String category;
 
@@ -42,7 +57,7 @@ public class AsyncProtocolImpl implements Protocol {
 		waiting.put(callId, object);
 
 		synchronized (writeLock) {
-			output.writeShort(Command.GET_OBJECT_UID_BY_CLASS_UID);
+			output.writeByte(Command.GET_OBJECT_UID_BY_CLASS_UID);
 			callId.write(output);
 			output.writeShort(classUID);
 			output.flush();
@@ -58,7 +73,7 @@ public class AsyncProtocolImpl implements Protocol {
 		waiting.put(callId, object);
 
 		synchronized (writeLock) {
-			output.writeShort(Command.INVOKE);
+			output.writeByte(Command.INVOKE);
 			callId.write(output);
 			output.writeLong(objectUID);
 			output.writeShort(methodUID);
@@ -73,7 +88,7 @@ public class AsyncProtocolImpl implements Protocol {
 
 	public void writeInvokeResult(CallId callId, byte[] data) throws IOException {
 		synchronized (writeLock) {
-			output.writeShort(AsyncCommand.INVOKE_RESULT);
+			output.writeByte(AsyncCommand.INVOKE_RESULT);
 			callId.write(output);
 			output.writeInt(data.length);
 			output.write(data);
@@ -83,7 +98,7 @@ public class AsyncProtocolImpl implements Protocol {
 
 	public void writeGetIntResult(CallId callId, int result) throws IOException {
 		synchronized (writeLock) {
-			output.writeShort(AsyncCommand.GET_INT_RESULT);
+			output.writeByte(AsyncCommand.GET_INT_RESULT);
 			callId.write(output);
 			output.writeInt(result);
 			output.flush();
@@ -92,8 +107,8 @@ public class AsyncProtocolImpl implements Protocol {
 
 	public <R extends CommandReceiver> void readCommands(R receiver) throws IOException, InterruptedException {
 		synchronized (readLock) {
-			short command;
-			while ((command = input.readShort()) != -1) {
+			byte command;
+			while ((command = input.readByte()) != -1) {
 				switch (command) {
 					case Command.GET_OBJECT_UID_BY_CLASS_UID:
 						CallId callId = new AsyncCallId().read(input);
@@ -148,7 +163,7 @@ public class AsyncProtocolImpl implements Protocol {
 
 	public void writeObjectId(CallId callId, long objectUID) throws IOException {
 		synchronized (writeLock) {
-			output.writeShort(AsyncCommand.GET_OBJECT_UID_BY_CLASS_UID_RESULT);
+			output.writeByte(AsyncCommand.GET_OBJECT_UID_BY_CLASS_UID_RESULT);
 			callId.write(output);
 			output.writeLong(objectUID);
 			output.flush();
@@ -162,7 +177,7 @@ public class AsyncProtocolImpl implements Protocol {
 		waiting.put(callId, object);
 
 		synchronized (writeLock) {
-			output.writeShort(Command.GET_INT);
+			output.writeByte(Command.GET_INT);
 			callId.write(output);
 			output.writeLong(objectUID);
 			output.writeShort(methodUID);
@@ -188,9 +203,9 @@ public class AsyncProtocolImpl implements Protocol {
 	}
 
 	private interface AsyncCommand extends Command {
-		short GET_OBJECT_UID_BY_CLASS_UID_RESULT = 10;
-		short INVOKE_RESULT = 11;
-		short GET_INT_RESULT = 12;
+		byte GET_OBJECT_UID_BY_CLASS_UID_RESULT = 10;
+		byte INVOKE_RESULT = 11;
+		byte GET_INT_RESULT = 12;
 	}
 
 	private static class AsyncCallId implements CallId {

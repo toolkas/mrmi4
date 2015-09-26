@@ -26,7 +26,7 @@ public class SyncProtocolImpl implements Protocol {
 	}
 
 	public synchronized WaitObject<Long> getObjectByClassUID(short classUID) throws IOException {
-		output.writeShort(Command.GET_OBJECT_UID_BY_CLASS_UID);
+		output.writeByte(Command.GET_OBJECT_UID_BY_CLASS_UID);
 		output.writeShort(classUID);
 		output.flush();
 
@@ -34,10 +34,6 @@ public class SyncProtocolImpl implements Protocol {
 		return new WaitObject<Long>() {
 			public Long get() {
 				return objectUID;
-			}
-
-			public Long get(long timeout) {
-				return get();
 			}
 		};
 	}
@@ -48,7 +44,7 @@ public class SyncProtocolImpl implements Protocol {
 	}
 
 	public synchronized WaitObject<byte[]> invoke(long objectUID, short methodUID, byte[] data) throws IOException {
-		output.writeShort(Command.INVOKE);
+		output.writeByte(Command.INVOKE);
 		output.writeLong(objectUID);
 		output.writeShort(methodUID);
 
@@ -63,10 +59,6 @@ public class SyncProtocolImpl implements Protocol {
 		return new WaitObject<byte[]>() {
 			public byte[] get() {
 				return bytes;
-			}
-
-			public byte[] get(long timeout) {
-				return get();
 			}
 		};
 	}
@@ -83,8 +75,8 @@ public class SyncProtocolImpl implements Protocol {
 	}
 
 	public synchronized void readCommands(CommandReceiver receiver) throws IOException {
-		short command;
-		while ((command = input.readShort()) != -1) {
+		byte command;
+		while ((command = input.readByte()) != -1) {
 			switch (command) {
 				case Command.GET_OBJECT_UID_BY_CLASS_UID:
 					receiver.onGetObjectUIDByClassUID(null, input.readShort());
@@ -109,7 +101,7 @@ public class SyncProtocolImpl implements Protocol {
 	}
 
 	public synchronized WaitObject<Integer> getInt(long objectUID, short methodUID) throws IOException {
-		output.writeShort(Command.GET_INT);
+		output.writeByte(Command.GET_INT);
 		output.writeLong(objectUID);
 		output.writeShort(methodUID);
 		output.flush();

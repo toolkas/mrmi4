@@ -38,10 +38,10 @@ public interface Protocol extends Closeable {
 	}
 
 	interface Command {
-		short GET_OBJECT_UID_BY_CLASS_UID = 1;
-		short INVOKE = 2;
+		byte GET_OBJECT_UID_BY_CLASS_UID = 1;
+		byte INVOKE = 2;
 
 		//Performance
-		short GET_INT = 3;
+		byte GET_INT = 3;
 	}
 }
