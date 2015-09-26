@@ -1,7 +1,8 @@
-package ru.idmt.commons.mrmi4.example;
+package ru.idmt.commons.mrmi4.example.client;
 
 import com.spellmaster.micrormi.ClientObjectObjectManager;
 import com.spellmaster.micrormi.MicroRMIFactory;
+import ru.idmt.commons.mrmi4.example.api.IExample;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class MrmiExampleClient {
 					try {
 						Monitor monitor = testAction(new Action() {
 							public void execute() throws InterruptedException, TimeoutException, IOException {
-								example.getList();
+								example.getInt();
 							}
 						}, 100000);
 

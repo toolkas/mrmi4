@@ -17,19 +17,7 @@ public class ExampleServer {
 	public static void main(String[] args) throws IOException, SAXException, URISyntaxException, ParserConfigurationException, NoSuchMethodException, ClassNotFoundException {
 		UIDManager uidManager = new ReflectionsUIDManager(Loader.class.getResource("example.xml"));
 		ObjectManagerImpl objectManager = new ObjectManagerImpl();
-		objectManager.register(IExample.class, new IExample() {
-			public int getInt() {
-				return 1;
-			}
-
-			public int getInt(String value) {
-				return 12;
-			}
-
-			public int getInt(String value, String value2) {
-				return 15;
-			}
-		});
+		objectManager.register(IExample.class, new ExampleImpl());
 
 		RServer server = new AsyncServer(6969, 20);
 		RServer.State state = server.start(uidManager, objectManager);
