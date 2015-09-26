@@ -81,6 +81,15 @@ public class AsyncProtocolImpl implements Protocol {
 		}
 	}
 
+	public void writeGetIntResult(CallId callId, int result) throws IOException {
+		synchronized (writeLock) {
+			output.writeShort(AsyncCommand.GET_INT_RESULT);
+			callId.write(output);
+			output.writeInt(result);
+			output.flush();
+		}
+	}
+
 	public <R extends CommandReceiver> void readCommands(R receiver) throws IOException, InterruptedException {
 		synchronized (readLock) {
 			short command;
@@ -117,6 +126,21 @@ public class AsyncProtocolImpl implements Protocol {
 
 						((ClientCommandReceiver) receiver).onInvokeResult(callId4, data2);
 						break;
+					case AsyncCommand.GET_INT:
+						CallId callId5 = new AsyncCallId().read(input);
+
+						long objectUID3 = input.readLong();
+						short methodUID2 = input.readShort();
+
+						receiver.onGetInt(callId5, objectUID3, methodUID2);
+						break;
+					case AsyncCommand.GET_INT_RESULT:
+						CallId callId6 = new AsyncCallId().read(input);
+						int result = input.readInt();
+
+						((ClientCommandReceiver) receiver).onGetIntResult(callId6, result);
+						break;
+
 				}
 			}
 		}
@@ -129,6 +153,23 @@ public class AsyncProtocolImpl implements Protocol {
 			output.writeLong(objectUID);
 			output.flush();
 		}
+	}
+
+	public WaitObject<Integer> getInt(long objectUID, short methodUID) throws IOException {
+		CallId callId = createCallId();
+
+		AsyncWaitObject<Integer> object = new AsyncWaitObject<Integer>(callId);
+		waiting.put(callId, object);
+
+		synchronized (writeLock) {
+			output.writeShort(Command.GET_INT);
+			callId.write(output);
+			output.writeLong(objectUID);
+			output.writeShort(methodUID);
+			output.flush();
+		}
+
+		return object;
 	}
 
 	public boolean isClosed() {
@@ -147,8 +188,9 @@ public class AsyncProtocolImpl implements Protocol {
 	}
 
 	private interface AsyncCommand extends Command {
-		short GET_OBJECT_UID_BY_CLASS_UID_RESULT = 3;
-		short INVOKE_RESULT = 4;
+		short GET_OBJECT_UID_BY_CLASS_UID_RESULT = 10;
+		short INVOKE_RESULT = 11;
+		short GET_INT_RESULT = 12;
 	}
 
 	private static class AsyncCallId implements CallId {

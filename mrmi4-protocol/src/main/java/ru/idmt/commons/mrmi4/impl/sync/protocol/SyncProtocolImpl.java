@@ -5,6 +5,7 @@ import ru.idmt.commons.mrmi4.api.protocol.WaitObject;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Синхронная реализация протокола обмена.
@@ -76,6 +77,11 @@ public class SyncProtocolImpl implements Protocol {
 		output.flush();
 	}
 
+	public synchronized void writeGetIntResult(CallId callId, int result) throws IOException {
+		output.writeInt(result);
+		output.flush();
+	}
+
 	public synchronized void readCommands(CommandReceiver receiver) throws IOException {
 		short command;
 		while ((command = input.readShort()) != -1) {
@@ -92,8 +98,28 @@ public class SyncProtocolImpl implements Protocol {
 					input.readFully(bytes, 0, n);
 
 					receiver.onInvoke(null, objectUID, methodUID, bytes);
+					break;
+				case Command.GET_INT:
+					long objectUID2 = input.readLong();
+					short methodUID2 = input.readShort();
+
+					receiver.onGetInt(null, objectUID2, methodUID2);
 			}
 		}
+	}
+
+	public synchronized WaitObject<Integer> getInt(long objectUID, short methodUID) throws IOException {
+		output.writeShort(Command.GET_INT);
+		output.writeLong(objectUID);
+		output.writeShort(methodUID);
+		output.flush();
+
+		final int result = input.readInt();
+		return new WaitObject<Integer>() {
+			public Integer get() throws TimeoutException, InterruptedException {
+				return result;
+			}
+		};
 	}
 
 	public boolean isClosed() {

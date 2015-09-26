@@ -15,17 +15,13 @@ public class AsyncWaitObject<T> implements WaitObject<T> {
 		this.key = key;
 	}
 
-	public T get(long timeout) throws InterruptedException, TimeoutException {
+	public T get() throws TimeoutException, InterruptedException {
 		synchronized (lock) {
 			while (!updated) {
 				lock.wait();
 			}
 			return value;
 		}
-	}
-
-	public T get() throws TimeoutException, InterruptedException {
-		return get(Long.MAX_VALUE);
 	}
 
 	public void set(T value) {

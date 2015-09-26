@@ -1,13 +1,13 @@
 package ru.idmt.commons.mrmi4.base.server;
 
 import org.apache.log4j.Logger;
-import ru.idmt.commons.mrmi4.commons.ObjectManager;
 import ru.idmt.commons.mrmi4.api.protocol.Protocol;
 import ru.idmt.commons.mrmi4.api.server.RServer;
-import ru.idmt.commons.mrmi4.commons.UIDManager;
 import ru.idmt.commons.mrmi4.base.protocol.RA;
 import ru.idmt.commons.mrmi4.base.protocol.RO;
+import ru.idmt.commons.mrmi4.commons.ObjectManager;
 import ru.idmt.commons.mrmi4.commons.RObject;
+import ru.idmt.commons.mrmi4.commons.UIDManager;
 import ru.idmt.commons.mrmi4.util.ReflectionUtils;
 
 import java.io.*;
@@ -80,6 +80,22 @@ public abstract class AbstractServer implements RServer {
 													}
 												}
 
+											});
+										}
+
+										public void onGetInt(final Protocol.CallId callId, final long objectUID, final short methodUID) {
+											executor.execute(new Runnable() {
+												public void run() {
+													try {
+														final RObject object = objectManager.get(objectUID);
+														Method method = uidManager.getMethodByUID(methodUID);
+
+														int result = (Integer) method.invoke(object);
+														protocol.writeGetIntResult(callId, result);
+													} catch (Exception e) {
+														LOGGER.error(e.getMessage(), e);
+													}
+												}
 											});
 										}
 									});

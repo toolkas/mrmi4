@@ -6,4 +6,6 @@ public interface ClientCommandReceiver extends Protocol.CommandReceiver {
 	void onGetObjectUIDByClassUIDResult(Protocol.CallId callId, long objectUID);
 
 	void onInvokeResult(Protocol.CallId callId, byte[] data);
+
+	void onGetIntResult(Protocol.CallId callId, int result);
 }

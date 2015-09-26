@@ -12,16 +12,23 @@ public interface Protocol extends Closeable {
 
 	void writeInvokeResult(CallId callId, byte[] data) throws IOException;
 
+	void writeGetIntResult(CallId callId, int result) throws IOException;
+
 	<R extends CommandReceiver> void readCommands(R receiver) throws IOException, InterruptedException;
 
 	void writeObjectId(CallId callId, long objectUID) throws IOException;
 
 	boolean isClosed();
 
+	//Performance
+	WaitObject<Integer> getInt(long objectUID, short methodUID) throws IOException;
+
 	interface CommandReceiver {
 		void onGetObjectUIDByClassUID(CallId callId, short classUID);
 
 		void onInvoke(CallId callId, long objectUID, short methodUID, byte[] data);
+
+		void onGetInt(CallId callId, long objectUID, short methodUID);
 	}
 
 	interface CallId {
@@ -33,5 +40,8 @@ public interface Protocol extends Closeable {
 	interface Command {
 		short GET_OBJECT_UID_BY_CLASS_UID = 1;
 		short INVOKE = 2;
+
+		//Performance
+		short GET_INT = 3;
 	}
 }

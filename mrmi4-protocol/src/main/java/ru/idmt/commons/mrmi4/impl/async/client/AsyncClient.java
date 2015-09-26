@@ -46,6 +46,15 @@ public class AsyncClient extends AbstractClient {
 							AsyncWaitObject<byte[]> object = (AsyncWaitObject<byte[]>) waiting.get(callId);
 							object.set(data);
 						}
+
+						public void onGetIntResult(Protocol.CallId callId, int result) {
+							AsyncWaitObject<Integer> object = (AsyncWaitObject<Integer>) waiting.get(callId);
+							object.set(result);
+						}
+
+						public void onGetInt(Protocol.CallId callId, long objectUID, short methodUID) {
+							throw new UnsupportedOperationException();
+						}
 					});
 				} catch (SocketException ex) {
 					if (!protocol.isClosed()) {

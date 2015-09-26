@@ -58,6 +58,14 @@ public abstract class AbstractClient implements RClient {
 
 				short methodUID = uidManager.getMethodUID(method);
 
+				Class returnType = method.getReturnType();
+				if(returnType == int.class || returnType == Integer.class) {
+					if(method.getParameterTypes().length == 0) {
+						WaitObject<Integer> intValue = protocol.getInt(objectUID, methodUID);
+						return intValue.get();
+					}
+				}
+
 				byte[] data = serializeObject(args);
 
 				WaitObject<byte[]> waitObject = protocol.invoke(objectUID, methodUID, data);
