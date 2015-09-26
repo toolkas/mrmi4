@@ -55,8 +55,8 @@ public abstract class AbstractServer implements RServer {
 														Class<?> iClass = uidManager.getClassByUID(classUID);
 														long objectUID = objectManager.getUID(iClass);
 														protocol.writeObjectId(callId, objectUID);
-													} catch (IOException e) {
-														e.printStackTrace();
+													} catch (Exception e) {
+														LOGGER.error(e.getMessage(), e);
 													}
 												}
 											});
@@ -69,66 +69,17 @@ public abstract class AbstractServer implements RServer {
 														final RObject object = objectManager.get(objectUID);
 														Method method = uidManager.getMethodByUID(methodUID);
 
-														Object[] args = null;
-														ByteArrayInputStream bais = new ByteArrayInputStream(data);
-														ObjectInputStream ois = null;
-														try {
-															ois = new ObjectInputStream(bais) {
-																{
-																	enableResolveObject(true);
-																}
-
-																@Override
-																protected Object resolveObject(Object obj) throws IOException {
-																	if (obj instanceof RA) {
-																		RA ra = (RA) obj;
-																		return objectManager.get(ra.getUid());
-																	}
-																	return super.resolveObject(obj);
-																}
-															};
-															args = (Object[]) ois.readObject();
-														} finally {
-															if (ois != null) {
-																ois.close();
-															}
-														}
+														Object[] args = (Object[]) deserializeObject(objectManager, data);
 
 														final Object ret = method.invoke(object, args);
 
-														ByteArrayOutputStream baos = new ByteArrayOutputStream();
-														ObjectOutputStream oos = null;
-														try {
-															oos = new ObjectOutputStream(baos) {
-																{
-																	enableReplaceObject(true);
-																}
-
-																@Override
-																protected Object replaceObject(Object obj) throws IOException {
-																	if (obj instanceof RObject) {
-																		short[] interfaces = ReflectionUtils.getRemoteInterfaces(uidManager, obj.getClass());
-																		long objectUID = objectManager.add((RObject) obj);
-																		return new RO(interfaces, objectUID);
-																	}
-																	return super.replaceObject(obj);
-																}
-															};
-															oos.writeObject(ret);
-
-														} finally {
-															if (oos != null) {
-																oos.close();
-															}
-														}
-
-														byte[] out = baos.toByteArray();
-														//System.out.println(out.length);
+														byte[] out = serializeObject(uidManager, objectManager, ret);
 														protocol.writeInvokeResult(callId, out);
 													} catch (Exception e) {
-														e.printStackTrace();
+														LOGGER.error(e.getMessage(), e);
 													}
 												}
+
 											});
 										}
 									});
@@ -160,6 +111,67 @@ public abstract class AbstractServer implements RServer {
 				serverSocket.close();
 			}
 		};
+	}
+
+	protected byte[] serializeObject(final UIDManager uidManager, final ObjectManager objectManager, Object ret) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = null;
+		try {
+			oos = new ObjectOutputStream(baos) {
+				{
+					enableReplaceObject(true);
+				}
+
+				@Override
+				protected Object replaceObject(Object obj) throws IOException {
+					if (obj instanceof RObject) {
+						short[] interfaces = ReflectionUtils.getRemoteInterfaces(uidManager, obj.getClass());
+						long objectUID = objectManager.add((RObject) obj);
+						return new RO(interfaces, objectUID);
+					}
+					return super.replaceObject(obj);
+				}
+			};
+			oos.writeObject(ret);
+
+		} finally {
+			if (oos != null) {
+				oos.close();
+			}
+		}
+
+		return baos.toByteArray();
+	}
+
+	protected Object deserializeObject(final ObjectManager objectManager, byte[] data) throws IOException, ClassNotFoundException {
+		ByteArrayInputStream bais = new ByteArrayInputStream(data);
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(bais) {
+				{
+					enableResolveObject(true);
+				}
+
+				@Override
+				protected Object readObjectOverride() throws IOException, ClassNotFoundException {
+					return super.readObjectOverride();
+				}
+
+				@Override
+				protected Object resolveObject(Object obj) throws IOException {
+					if (obj instanceof RA) {
+						RA ra = (RA) obj;
+						return objectManager.get(ra.getUid());
+					}
+					return super.resolveObject(obj);
+				}
+			};
+			return ois.readObject();
+		} finally {
+			if (ois != null) {
+				ois.close();
+			}
+		}
 	}
 
 	protected abstract Executor createExecutor();

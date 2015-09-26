@@ -52,75 +52,84 @@ public abstract class AbstractClient implements RClient {
 			}
 
 			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-				if(ReflectionUtils.isToString(method)) {
+				if (ReflectionUtils.isToString(method)) {
 					return "RObject[" + objectUID + "]";
 				}
 
 				short methodUID = uidManager.getMethodUID(method);
 
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ObjectOutputStream output = null;
-				try {
-					output = new ObjectOutputStream(baos) {
-						{
-							enableReplaceObject(true);
-						}
+				byte[] data = serializeObject(args);
 
-						@Override
-						protected Object replaceObject(Object obj) throws IOException {
-							if (obj instanceof RObject) {
-								if (Proxy.isProxyClass(obj.getClass())) {
-									InvocationHandler handler = Proxy.getInvocationHandler(obj);
-									if (handler instanceof RInvocationHandler) {
-										long uid = ((RInvocationHandler) handler).getObjectUID();
-										return new RA(uid);
-									}
-								}
-							}
-							return super.replaceObject(obj);
-						}
-					};
-					output.writeObject(args);
-				} finally {
-					if (output != null) {
-						output.close();
-					}
-				}
-
-				byte[] data = baos.toByteArray();
 				WaitObject<byte[]> waitObject = protocol.invoke(objectUID, methodUID, data);
 				byte[] result = waitObject.get();
 
-				ByteArrayInputStream bais = new ByteArrayInputStream(result);
-				ObjectInputStream input = null;
-				try {
-					input = new ObjectInputStream(bais) {
-						{
-							enableResolveObject(true);
-						}
-
-						@Override
-						protected Object resolveObject(Object obj) throws IOException {
-							if (obj instanceof RO) {
-								RO ro = (RO) obj;
-
-								Class<?>[] interfaces = new Class[ro.getClassUIDs().length];
-								for (int index = 0; index < ro.getClassUIDs().length; index++) {
-									interfaces[index] = uidManager.getClassByUID(ro.getClassUIDs()[index]);
-								}
-								return createProxy(interfaces, ro.getUid(), uidManager, protocol);
-							}
-							return super.resolveObject(obj);
-						}
-					};
-					return input.readObject();
-				} finally {
-					if (input != null) {
-						input.close();
-					}
-				}
+				return deserializeObject(protocol, result);
 			}
 		});
+	}
+
+	protected byte[] serializeObject(Object object) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream output = null;
+		try {
+			output = new ObjectOutputStream(baos) {
+				{
+					enableReplaceObject(true);
+				}
+
+				@Override
+				protected Object replaceObject(Object obj) throws IOException {
+					if (obj instanceof RObject) {
+						if (Proxy.isProxyClass(obj.getClass())) {
+							InvocationHandler handler = Proxy.getInvocationHandler(obj);
+							if (handler instanceof RInvocationHandler) {
+								long uid = ((RInvocationHandler) handler).getObjectUID();
+								return new RA(uid);
+							}
+						}
+					}
+					return super.replaceObject(obj);
+				}
+			};
+			output.writeObject(object);
+		} finally {
+			if (output != null) {
+				output.close();
+			}
+		}
+
+		return baos.toByteArray();
+	}
+
+	protected Object deserializeObject(final Protocol protocol, byte[] result) throws IOException, ClassNotFoundException {
+		ByteArrayInputStream bais = new ByteArrayInputStream(result);
+		ObjectInputStream input = null;
+		try {
+			input = new ObjectInputStream(bais) {
+				{
+					enableResolveObject(true);
+				}
+
+				@Override
+				protected Object resolveObject(Object obj) throws IOException {
+					if (obj instanceof RO) {
+						RO ro = (RO) obj;
+
+						Class<?>[] interfaces = new Class[ro.getClassUIDs().length];
+						for (int index = 0; index < ro.getClassUIDs().length; index++) {
+							interfaces[index] = uidManager.getClassByUID(ro.getClassUIDs()[index]);
+						}
+						return createProxy(interfaces, ro.getUid(), uidManager, protocol);
+					}
+					return super.resolveObject(obj);
+				}
+			};
+			return input.readObject();
+		} finally {
+			if (input != null) {
+				input.close();
+			}
+		}
 	}
 
 	private interface RInvocationHandler extends InvocationHandler {
