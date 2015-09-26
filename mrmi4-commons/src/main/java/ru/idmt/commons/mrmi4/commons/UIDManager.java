@@ -1,4 +1,4 @@
-package ru.idmt.commons.mrmi4.api.uid;
+package ru.idmt.commons.mrmi4.commons;
 
 import ru.idmt.commons.mrmi4.commons.RObject;
 

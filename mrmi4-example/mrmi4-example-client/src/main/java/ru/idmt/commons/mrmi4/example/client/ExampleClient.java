@@ -1,18 +1,27 @@
-package ru.idmt.commons.mrmi4.example;
+package ru.idmt.commons.mrmi4.example.client;
 
+import org.xml.sax.SAXException;
 import ru.idmt.commons.mrmi4.api.client.RClient;
 import ru.idmt.commons.mrmi4.api.client.RSession;
+import ru.idmt.commons.mrmi4.commons.UIDManager;
+import ru.idmt.commons.mrmi4.example.api.IExample;
+import ru.idmt.commons.mrmi4.example.api.Loader;
 import ru.idmt.commons.mrmi4.impl.async.client.AsyncClient;
+import ru.idmt.commons.mrmi4.uid.ReflectionsUIDManager;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 
 public class ExampleClient {
-	public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
-		RClient client = new AsyncClient(new ExampleUIDManager());
+	public static void main(String[] args) throws IOException, TimeoutException, InterruptedException, ClassNotFoundException, ParserConfigurationException, NoSuchMethodException, SAXException, URISyntaxException {
+		UIDManager uidManager = new ReflectionsUIDManager(Loader.class.getResource("example.xml"));
+
+		RClient client = new AsyncClient(uidManager);
 
 		RSession session = null;
 		try {
@@ -30,7 +39,7 @@ public class ExampleClient {
 						try {
 							Monitor monitor = testAction(new Action() {
 								public void execute() throws InterruptedException, TimeoutException, IOException {
-									example.getList();
+									example.getInt();
 								}
 							}, 100000);
 

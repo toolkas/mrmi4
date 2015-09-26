@@ -1,7 +1,7 @@
 package ru.idmt.commons.mrmi4.util;
 
-import ru.idmt.commons.mrmi4.api.uid.UIDManager;
 import ru.idmt.commons.mrmi4.commons.RObject;
+import ru.idmt.commons.mrmi4.commons.UIDManager;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;

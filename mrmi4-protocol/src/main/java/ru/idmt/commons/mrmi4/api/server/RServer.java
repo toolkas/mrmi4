@@ -1,7 +1,7 @@
 package ru.idmt.commons.mrmi4.api.server;
 
-import ru.idmt.commons.mrmi4.api.om.ObjectManager;
-import ru.idmt.commons.mrmi4.api.uid.UIDManager;
+import ru.idmt.commons.mrmi4.commons.ObjectManager;
+import ru.idmt.commons.mrmi4.commons.UIDManager;
 
 import java.io.IOException;
 import java.util.Date;

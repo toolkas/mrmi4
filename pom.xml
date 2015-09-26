@@ -2,11 +2,11 @@
 				 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-<!--	<parent>
-		<groupId>ru.idmt</groupId>
-		<artifactId>commons</artifactId>
-		<version>2.0</version>
-	</parent>-->
+	<!--	<parent>
+			<groupId>ru.idmt</groupId>
+			<artifactId>commons</artifactId>
+			<version>2.0</version>
+		</parent>-->
 
 	<groupId>ru.idmt.commons</groupId>
 	<artifactId>mrmi4</artifactId>
@@ -17,6 +17,20 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+
+	<repositories>
+		<repository>
+			<id>idmt.commons</id>
+			<url>http://svndev.itc-c.local:3080/artifactory/idmt.commons</url>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>idmt.commons</id>
+			<url>http://svndev.itc-c.local:3080/artifactory/idmt.commons</url>
+		</pluginRepository>
+	</pluginRepositories>
 
 	<!--scm>
 		<developerConnection>scm:git:http://svndev.itc-c.local:8090/scm/git/mrmi3.git</developerConnection>
@@ -40,6 +54,9 @@
 
 	<modules>
 		<module>mrmi4-commons</module>
+		<module>mrmi4-plugin</module>
 		<module>mrmi4-protocol</module>
+		<module>mrmi4-example</module>
+		<module>mrmi4-uid</module>
 	</modules>
 </project>

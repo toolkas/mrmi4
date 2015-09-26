@@ -3,7 +3,7 @@ package ru.idmt.commons.mrmi4.base.client;
 import ru.idmt.commons.mrmi4.api.client.RClient;
 import ru.idmt.commons.mrmi4.api.client.RSession;
 import ru.idmt.commons.mrmi4.api.protocol.Protocol;
-import ru.idmt.commons.mrmi4.api.uid.UIDManager;
+import ru.idmt.commons.mrmi4.commons.UIDManager;
 import ru.idmt.commons.mrmi4.base.protocol.RA;
 import ru.idmt.commons.mrmi4.base.protocol.RO;
 import ru.idmt.commons.mrmi4.util.ReflectionUtils;
