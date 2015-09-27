@@ -30,7 +30,7 @@ public class ExampleClient {
 
 			final List<Double> results = new ArrayList<Double>();
 
-			int threads = 1;
+			int threads = 5;
 			final CountDownLatch latch = new CountDownLatch(threads);
 			for (int index = 0; index < threads; index++) {
 				new Thread() {
@@ -41,7 +41,7 @@ public class ExampleClient {
 								public void execute() throws InterruptedException, TimeoutException, IOException {
 									example.getValues();
 								}
-							}, 100);
+							}, 10000);
 
 							results.add(monitor.avg());
 							latch.countDown();

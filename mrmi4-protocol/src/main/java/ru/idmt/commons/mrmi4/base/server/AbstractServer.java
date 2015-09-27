@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 public abstract class AbstractServer implements RServer {
@@ -92,6 +93,27 @@ public abstract class AbstractServer implements RServer {
 
 														int result = (Integer) method.invoke(object);
 														protocol.writeGetIntResult(callId, result);
+													} catch (Exception e) {
+														LOGGER.error(e.getMessage(), e);
+													}
+												}
+											});
+										}
+
+										public void onGetList(final Protocol.CallId callId, final long objectUID, final short methodUID) {
+											executor.execute(new Runnable() {
+												public void run() {
+													try {
+														final RObject object = objectManager.get(objectUID);
+														Method method = uidManager.getMethodByUID(methodUID);
+
+														final List<? extends RObject> list = (List<? extends RObject>) method.invoke(object);
+														protocol.writeGetListResult(callId, list.size(), new Protocol.OnWriteGetList() {
+															public long getElementId(int index) {
+																RObject element = list.get(index);
+																return objectManager.add(element);
+															}
+														});
 													} catch (Exception e) {
 														LOGGER.error(e.getMessage(), e);
 													}

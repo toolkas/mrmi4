@@ -5,7 +5,6 @@ import ru.idmt.commons.mrmi4.api.protocol.WaitObject;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Синхронная реализация протокола обмена.
@@ -74,6 +73,15 @@ public class SyncProtocolImpl implements Protocol {
 		output.flush();
 	}
 
+	public synchronized void writeGetListResult(CallId callId, int size, OnWriteGetList writer) throws IOException {
+		output.writeInt(size);
+		for (int index = 0; index < size; index++) {
+			long elementId = writer.getElementId(index);
+			output.writeLong(elementId);
+		}
+		output.flush();
+	}
+
 	public synchronized void readCommands(CommandReceiver receiver) throws IOException {
 		byte command;
 		while ((command = input.readByte()) != -1) {
@@ -96,6 +104,14 @@ public class SyncProtocolImpl implements Protocol {
 					short methodUID2 = input.readShort();
 
 					receiver.onGetInt(null, objectUID2, methodUID2);
+					break;
+				case Command.GET_LIST:
+					long objectUID3 = input.readLong();
+					short methodUID3 = input.readShort();
+
+					receiver.onGetList(null, objectUID3, methodUID3);
+					break;
+
 			}
 		}
 	}
@@ -108,10 +124,24 @@ public class SyncProtocolImpl implements Protocol {
 
 		final int result = input.readInt();
 		return new WaitObject<Integer>() {
-			public Integer get() throws TimeoutException, InterruptedException {
+			public Integer get() throws InterruptedException {
 				return result;
 			}
 		};
+	}
+
+	public synchronized void getList(long objectUID, short methodUID, OnItem onItem) throws IOException {
+		output.writeByte(Command.GET_LIST);
+		output.writeLong(objectUID);
+		output.writeShort(methodUID);
+		output.flush();
+
+		int n = input.readInt();
+
+		for (int index = 0; index < n; index++) {
+			long elementId = input.readLong();
+			onItem.process(elementId);
+		}
 	}
 
 	public boolean isClosed() {

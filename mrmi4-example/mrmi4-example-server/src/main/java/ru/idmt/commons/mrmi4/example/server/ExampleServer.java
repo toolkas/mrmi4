@@ -19,7 +19,7 @@ public class ExampleServer {
 		ObjectManagerImpl objectManager = new ObjectManagerImpl();
 		objectManager.register(IExample.class, new ExampleImpl());
 
-		RServer server = new AsyncServer(6969, 20);
+		RServer server = new AsyncServer(6969, 10);
 		RServer.State state = server.start(uidManager, objectManager);
 		System.out.println("RServer[" + state.port() + "] started at " + state.started());
 	}

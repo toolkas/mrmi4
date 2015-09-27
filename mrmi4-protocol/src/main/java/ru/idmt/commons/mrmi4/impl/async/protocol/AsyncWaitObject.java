@@ -2,8 +2,6 @@ package ru.idmt.commons.mrmi4.impl.async.protocol;
 
 import ru.idmt.commons.mrmi4.api.protocol.WaitObject;
 
-import java.util.concurrent.TimeoutException;
-
 public class AsyncWaitObject<T> implements WaitObject<T> {
 	private final Object lock = new Object();
 
@@ -15,7 +13,7 @@ public class AsyncWaitObject<T> implements WaitObject<T> {
 		this.key = key;
 	}
 
-	public T get() throws TimeoutException, InterruptedException {
+	public T get() throws InterruptedException {
 		synchronized (lock) {
 			while (!updated) {
 				lock.wait();

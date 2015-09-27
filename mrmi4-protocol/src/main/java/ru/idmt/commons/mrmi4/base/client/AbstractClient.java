@@ -3,18 +3,21 @@ package ru.idmt.commons.mrmi4.base.client;
 import ru.idmt.commons.mrmi4.api.client.RClient;
 import ru.idmt.commons.mrmi4.api.client.RSession;
 import ru.idmt.commons.mrmi4.api.protocol.Protocol;
-import ru.idmt.commons.mrmi4.commons.UIDManager;
+import ru.idmt.commons.mrmi4.api.protocol.WaitObject;
 import ru.idmt.commons.mrmi4.base.protocol.RA;
 import ru.idmt.commons.mrmi4.base.protocol.RO;
-import ru.idmt.commons.mrmi4.util.ReflectionUtils;
 import ru.idmt.commons.mrmi4.commons.RException;
+import ru.idmt.commons.mrmi4.commons.RList;
 import ru.idmt.commons.mrmi4.commons.RObject;
-import ru.idmt.commons.mrmi4.api.protocol.WaitObject;
+import ru.idmt.commons.mrmi4.commons.UIDManager;
+import ru.idmt.commons.mrmi4.util.ReflectionUtils;
 
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 public abstract class AbstractClient implements RClient {
@@ -28,6 +31,7 @@ public abstract class AbstractClient implements RClient {
 		try {
 			final Protocol protocol = createProtocol(host, port);
 			return new RSession() {
+				@SuppressWarnings("unchecked")
 				public <T extends RObject> T get(Class<T> iClass) throws IOException, TimeoutException, InterruptedException {
 					short classUID = uidManager.getClassUID(iClass);
 					long objectUID = protocol.getObjectByClassUID(classUID).get();
@@ -63,6 +67,24 @@ public abstract class AbstractClient implements RClient {
 					if(method.getParameterTypes().length == 0) {
 						WaitObject<Integer> intValue = protocol.getInt(objectUID, methodUID);
 						return intValue.get();
+					}
+				}
+
+				if(returnType == List.class) {
+					if(method.getParameterTypes().length == 0) {
+						RList list = method.getAnnotation(RList.class);
+						if(list!=null) {
+							final Class<? extends RObject> componentType = list.value();
+							final List<RObject> result = new ArrayList<RObject>();
+							protocol.getList(objectUID, methodUID, new Protocol.OnItem() {
+								public void process(long elementId) {
+									RObject element = createProxy(new Class[]{componentType}, elementId, uidManager, protocol);
+									result.add(element);
+								}
+							});
+
+							return result;
+						}
 					}
 				}
 

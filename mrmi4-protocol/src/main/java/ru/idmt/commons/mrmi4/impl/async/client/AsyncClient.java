@@ -29,11 +29,6 @@ public class AsyncClient extends AbstractClient {
 			public void run() {
 				try {
 					protocol.readCommands(new ClientCommandReceiver() {
-						public void onGetObjectUIDByClassUIDResult(Protocol.CallId callId, long objectUID) {
-							AsyncWaitObject<Long> object = (AsyncWaitObject<Long>) waiting.get(callId);
-							object.set(objectUID);
-						}
-
 						public void onGetObjectUIDByClassUID(Protocol.CallId callId, short classUID) {
 							throw new UnsupportedOperationException();
 						}
@@ -42,17 +37,16 @@ public class AsyncClient extends AbstractClient {
 							throw new UnsupportedOperationException();
 						}
 
-						public void onInvokeResult(Protocol.CallId callId, byte[] data) {
-							AsyncWaitObject<byte[]> object = (AsyncWaitObject<byte[]>) waiting.get(callId);
-							object.set(data);
-						}
-
-						public void onGetIntResult(Protocol.CallId callId, int result) {
-							AsyncWaitObject<Integer> object = (AsyncWaitObject<Integer>) waiting.get(callId);
+						public <T> void onReceive(Protocol.CallId callId, T result) {
+							AsyncWaitObject<T> object = (AsyncWaitObject<T>) waiting.get(callId);
 							object.set(result);
 						}
 
 						public void onGetInt(Protocol.CallId callId, long objectUID, short methodUID) {
+							throw new UnsupportedOperationException();
+						}
+
+						public void onGetList(Protocol.CallId callId, long objectUID, short methodUID) {
 							throw new UnsupportedOperationException();
 						}
 					});

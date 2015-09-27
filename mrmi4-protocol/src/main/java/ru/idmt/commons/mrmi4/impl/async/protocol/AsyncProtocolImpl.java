@@ -16,19 +16,19 @@ public class AsyncProtocolImpl implements Protocol {
 	private final DataInputStream input;
 	private final Random random = new Random();
 
-	private final Object readLock = new Object(){
+	private final Object readLock = new Object() {
 		@Override
 		public String toString() {
 			return "ReadLock()";
 		}
 	};
-	private final Object writeLock = new Object(){
+	private final Object writeLock = new Object() {
 		@Override
 		public String toString() {
 			return "WriteLock()";
 		}
 	};
-	private final Object callIdLock = new Object(){
+	private final Object callIdLock = new Object() {
 		@Override
 		public String toString() {
 			return "CreateCallIdLock()";
@@ -119,7 +119,7 @@ public class AsyncProtocolImpl implements Protocol {
 					case AsyncCommand.GET_OBJECT_UID_BY_CLASS_UID_RESULT:
 						CallId callId2 = new AsyncCallId().read(input);
 						long objectUID = input.readLong();
-						((ClientCommandReceiver) receiver).onGetObjectUIDByClassUIDResult(callId2, objectUID);
+						((ClientCommandReceiver) receiver).onReceive(callId2, objectUID);
 						break;
 					case Command.INVOKE:
 						CallId callId3 = new AsyncCallId().read(input);
@@ -139,7 +139,7 @@ public class AsyncProtocolImpl implements Protocol {
 						byte[] data2 = new byte[n2];
 						input.readFully(data2, 0, n2);
 
-						((ClientCommandReceiver) receiver).onInvokeResult(callId4, data2);
+						((ClientCommandReceiver) receiver).onReceive(callId4, data2);
 						break;
 					case AsyncCommand.GET_INT:
 						CallId callId5 = new AsyncCallId().read(input);
@@ -153,9 +153,28 @@ public class AsyncProtocolImpl implements Protocol {
 						CallId callId6 = new AsyncCallId().read(input);
 						int result = input.readInt();
 
-						((ClientCommandReceiver) receiver).onGetIntResult(callId6, result);
+						((ClientCommandReceiver) receiver).onReceive(callId6, result);
 						break;
+					case AsyncCommand.GET_LIST:
+						CallId callId7 = new AsyncCallId().read(input);
 
+						long objectId = input.readLong();
+						short methodUID3 = input.readShort();
+
+						receiver.onGetList(callId7, objectId, methodUID3);
+						break;
+					case AsyncCommand.GET_LIST_RESULT:
+						CallId callId8 = new AsyncCallId().read(input);
+
+						int n3 = input.readInt();
+						long[] elementIds = new long[n3];
+
+						for (int index = 0; index < n3; index++) {
+							elementIds[index] = input.readLong();
+						}
+
+						((ClientCommandReceiver) receiver).onReceive(callId8, elementIds);
+						break;
 				}
 			}
 		}
@@ -187,6 +206,41 @@ public class AsyncProtocolImpl implements Protocol {
 		return object;
 	}
 
+	public void getList(long objectUID, short methodUID, OnItem onItem) throws IOException, InterruptedException {
+		CallId callId = createCallId();
+
+		AsyncWaitObject<long[]> object = new AsyncWaitObject<long[]>(callId);
+		waiting.put(callId, object);
+
+		synchronized (writeLock) {
+			output.writeByte(Command.GET_LIST);
+			callId.write(output);
+			output.writeLong(objectUID);
+			output.writeShort(methodUID);
+			output.flush();
+		}
+
+		Object value = object.get();
+		long[] elementIds = (long[]) value;
+		for (long elementId : elementIds) {
+			onItem.process(elementId);
+		}
+	}
+
+	public void writeGetListResult(CallId callId, int size, OnWriteGetList onWrite) throws IOException {
+		synchronized (writeLock) {
+			output.writeByte(AsyncCommand.GET_LIST_RESULT);
+			callId.write(output);
+			output.writeInt(size);
+
+			for (int index = 0; index < size; index++) {
+				long elementId = onWrite.getElementId(index);
+				output.writeLong(elementId);
+			}
+			output.flush();
+		}
+	}
+
 	public boolean isClosed() {
 		return socket.isClosed();
 	}
@@ -206,6 +260,7 @@ public class AsyncProtocolImpl implements Protocol {
 		byte GET_OBJECT_UID_BY_CLASS_UID_RESULT = 10;
 		byte INVOKE_RESULT = 11;
 		byte GET_INT_RESULT = 12;
+		byte GET_LIST_RESULT = 13;
 	}
 
 	private static class AsyncCallId implements CallId {
