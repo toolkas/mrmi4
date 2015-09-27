@@ -1,6 +1,10 @@
 package ru.idmt.commons.mrmi4.base.protocol;
 
-public class RO {
+import java.io.Serializable;
+
+public class RO implements Serializable {
+	private static final long serialVersionUID = 1188930664782255584L;
+
 	private short[] classUIDs;
 	private long uid;
 
